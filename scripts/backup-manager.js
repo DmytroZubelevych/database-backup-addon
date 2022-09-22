@@ -147,7 +147,6 @@ function BackupManager(config) {
                 'SNAPSHOT_ID=$(RESTIC_PASSWORD=$(cat /root/.backupedenv) restic -r /opt/backup/$(cat /root/.backupedenv) snapshots|grep $(cat /root/.backupid)|awk \'{print $1}\')',
                 '[ -n "${SNAPSHOT_ID}" ] || false',
 		'source /etc/jelastic/metainf.conf',
-		'[ "$COMPUTE_TYPE" == "redis" ] && { cp /var/lib/redis/dump.rdb /var/lib/redis/dump.rdb.old; jem service stop; RESTIC_PASSWORD=$(cat /root/.backupedenv) restic -r /opt/backup/$(cat /root/.backupedenv) restore ${SNAPSHOT_ID} --target / } || true',
 		'[ "$COMPUTE_TYPE" == "postgres" ] && PGPASSWORD=%(dbpass) psql -U %(dbuser) -d postgres < /root/db_backup.sql || true',
 		'if [ "$COMPUTE_TYPE" == "mariadb" ] || [ "$COMPUTE_TYPE" == "mysql" ] || [ "$COMPUTE_TYPE" == "percona" ]; then mysql -h localhost -u %(dbuser) -p%(dbpass) --force < /root/db_backup.sql; else true; fi',
 		'jem service restart'
