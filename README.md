@@ -1,5 +1,5 @@
 
-<img src="images/backup-logo.svg" width="100" alt="Backup Storage"/>  
+<img src="images/backup-logo.png" width="100" alt="Backup Storage"/>  
 
 # Database Backup Add-On
 
