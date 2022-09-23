@@ -18,8 +18,16 @@ function backup(){
     [ -d /opt/backup/${ENV_NAME}  ] || mkdir -p /opt/backup/${ENV_NAME}
     RESTIC_PASSWORD=${ENV_NAME} restic -q -r /opt/backup/${ENV_NAME}  snapshots || RESTIC_PASSWORD=${ENV_NAME} restic init -r /opt/backup/${ENV_NAME} 
     echo $(date) ${ENV_NAME}  "Checking the backup repository integrity and consistency before adding the new snapshot" | tee -a ${BACKUP_LOG_FILE}
-    RESTIC_PASSWORD=${ENV_NAME} restic -q -r /opt/backup/${ENV_NAME}  check | tee -a ${BACKUP_LOG_FILE}
-    source /etc/jelastic/metainf.conf; DUMP_NAME=$(date "+%F_%H%M%S"-\($COMPUTE_TYPE-$COMPUTE_TYPE_FULL_VERSION\))
+    RESTIC_PASSWORD=${ENV_NAME} restic -q -r /opt/backup/${ENV_NAME} check | tee -a ${BACKUP_LOG_FILE}
+    source /etc/jelastic/metainf.conf;
+    if [ "$COMPUTE_TYPE" == "redis" ]; then
+        if grep -q '^cluster-enabled yes' /etc/redis.conf; then
+            REDIS_TYPE="-cluster"
+        else
+            REDIS_TYPE="-standalone"
+        fi
+    fi
+    DUMP_NAME=$(date "+%F_%H%M%S"-\($COMPUTE_TYPE-$COMPUTE_TYPE_FULL_VERSION$REDIS_TYPE\))
     echo $(date) ${ENV_NAME} "Creating and saving the DB dump to ${DUMP_NAME} snapshot" | tee -a ${BACKUP_LOG_FILE}
     if [ "$COMPUTE_TYPE" == "redis" ]; then
         export REDISCLI_AUTH=$(cat /etc/redis.conf |grep '^requirepass'|awk '{print $2}');
@@ -30,12 +38,7 @@ function backup(){
             echo "INFO PERSISTENCE" | redis-cli | grep -q "rdb_bgsave_in_progress:1"
             finished=$?
         done
-        if grep '^cluster-enabled yes' /etc/redis.conf; then
-            REDIS_TYPE="cluster"
-        else
-            REDIS_TYPE="standalone"
-        fi
-        RESTIC_PASSWORD=${ENV_NAME} restic -q -r /opt/backup/${ENV_NAME}  backup --tag "${DUMP_NAME}-${REDIS_TYPE} ${BACKUP_ADDON_COMMIT_ID} ${BACKUP_TYPE}" /var/lib/redis/dump.rdb | tee -a ${BACKUP_LOG_FILE}
+        RESTIC_PASSWORD=${ENV_NAME} restic -q -r /opt/backup/${ENV_NAME}  backup --tag "${DUMP_NAME} ${BACKUP_ADDON_COMMIT_ID} ${BACKUP_TYPE}" /var/lib/redis/dump.rdb | tee -a ${BACKUP_LOG_FILE}
     else
         if [ "$COMPUTE_TYPE" == "postgres" ]; then
             PGPASSWORD="${DBPASSWD}" pg_dumpall -U ${DBUSER} > db_backup.sql
