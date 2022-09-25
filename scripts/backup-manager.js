@@ -155,6 +155,7 @@ function BackupManager(config) {
             ], {
                 nodeGroup : config.nodeGroup,
                 envName : config.envName,
+		baseUrl : config.baseUrl,
 		dbuser: config.dbuser,
 		dbpass: config.dbpass
             }],
