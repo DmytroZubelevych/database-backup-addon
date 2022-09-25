@@ -41,9 +41,9 @@ function backup(){
             do
                 redis-cli -h $i --rdb /tmp/redis-dump-cluster-$i.rdb
             done
-            RDB_TO_BACKUP=$(ls -d /tmp/* |grep redis-dump.*)
-            RESTIC_PASSWORD=${ENV_NAME} restic -q -r /opt/backup/${ENV_NAME}  backup --tag "${DUMP_NAME} ${BACKUP_ADDON_COMMIT_ID} ${BACKUP_TYPE}" ${RDB_TO_BACKUP} | tee -a ${BACKUP_LOG_FILE}
         fi
+        RDB_TO_BACKUP=$(ls -d /tmp/* |grep redis-dump.*);
+        RESTIC_PASSWORD=${ENV_NAME} restic -q -r /opt/backup/${ENV_NAME}  backup --tag "${DUMP_NAME} ${BACKUP_ADDON_COMMIT_ID} ${BACKUP_TYPE}" ${RDB_TO_BACKUP} | tee -a ${BACKUP_LOG_FILE};
     else
         if [ "$COMPUTE_TYPE" == "postgres" ]; then
             PGPASSWORD="${DBPASSWD}" pg_dumpall -U ${DBUSER} > db_backup.sql
