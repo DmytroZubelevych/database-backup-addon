@@ -31,7 +31,7 @@ function backup(){
     echo $(date) ${ENV_NAME} "Creating and saving the DB dump to ${DUMP_NAME} snapshot" | tee -a ${BACKUP_LOG_FILE}
     if [ "$COMPUTE_TYPE" == "redis" ]; then
         export REDISCLI_AUTH=$(cat /etc/redis.conf |grep '^requirepass'|awk '{print $2}');
-        if [ "$REDIS_TYPE" == "redis" ]; then
+        if [ "$REDIS_TYPE" == "-standalone" ]; then
             redis-cli --rdb /tmp/redis-dump-standalone.rdb
         else
             MASTERS_LIST="redis-cli cluster nodes|grep master|awk '{print $2}'|awk -F : '{print $1}'";
