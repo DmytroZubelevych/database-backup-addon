@@ -31,8 +31,16 @@ function backup(){
     echo $(date) ${ENV_NAME} "Creating and saving the DB dump to ${DUMP_NAME} snapshot" | tee -a ${BACKUP_LOG_FILE}
     if [ "$COMPUTE_TYPE" == "redis" ]; then
         export REDISCLI_AUTH=$(cat /etc/redis.conf |grep '^requirepass'|awk '{print $2}');
-        redis-cli --rdb /tmp/standalone-dump.rdb
-        RESTIC_PASSWORD=${ENV_NAME} restic -q -r /opt/backup/${ENV_NAME}  backup --tag "${DUMP_NAME} ${BACKUP_ADDON_COMMIT_ID} ${BACKUP_TYPE}" /tmp/standalone-dump.rdb | tee -a ${BACKUP_LOG_FILE}
+        if [ "$REDIS_TYPE" == "redis" ]; then
+            redis-cli --rdb /tmp/redis-dump-standalone.rdb
+        else
+            MASTERS_LIST="redis-cli cluster nodes|grep master|awk '{print $2}'|awk -F : '{print $1}'";
+            for i in $MASTERS_LIST
+            do
+                redis-cli -h $i --rdb /tmp/redis-dump-cluster-$i.rdb
+            done
+            RESTIC_PASSWORD=${ENV_NAME} restic -q -r /opt/backup/${ENV_NAME}  backup --tag "${DUMP_NAME} ${BACKUP_ADDON_COMMIT_ID} ${BACKUP_TYPE}" /tmp/redis-dump.* | tee -a ${BACKUP_LOG_FILE}
+        fi
     else
         if [ "$COMPUTE_TYPE" == "postgres" ]; then
             PGPASSWORD="${DBPASSWD}" pg_dumpall -U ${DBUSER} > db_backup.sql
