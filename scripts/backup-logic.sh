@@ -30,6 +30,8 @@ function backup(){
     DUMP_NAME=$(date "+%F_%H%M%S"-\($COMPUTE_TYPE-$COMPUTE_TYPE_FULL_VERSION$REDIS_TYPE\))
     echo $(date) ${ENV_NAME} "Creating and saving the DB dump to ${DUMP_NAME} snapshot" | tee -a ${BACKUP_LOG_FILE}
     if [ "$COMPUTE_TYPE" == "redis" ]; then
+        RDB_TO_REMOVE=$(ls -1 /tmp |grep redis-dump.*)
+        rm -f ${RDB_TO_REMOVE}
         export REDISCLI_AUTH=$(cat /etc/redis.conf |grep '^requirepass'|awk '{print $2}');
         if [ "$REDIS_TYPE" == "-standalone" ]; then
             redis-cli --rdb /tmp/redis-dump-standalone.rdb
@@ -39,7 +41,8 @@ function backup(){
             do
                 redis-cli -h $i --rdb /tmp/redis-dump-cluster-$i.rdb
             done
-            RESTIC_PASSWORD=${ENV_NAME} restic -q -r /opt/backup/${ENV_NAME}  backup --tag "${DUMP_NAME} ${BACKUP_ADDON_COMMIT_ID} ${BACKUP_TYPE}" /tmp/redis-dump.* | tee -a ${BACKUP_LOG_FILE}
+            RDB_TO_BACKUP=$(ls -1 /tmp |grep redis-dump.*)
+            RESTIC_PASSWORD=${ENV_NAME} restic -q -r /opt/backup/${ENV_NAME}  backup --tag "${DUMP_NAME} ${BACKUP_ADDON_COMMIT_ID} ${BACKUP_TYPE}" ${RDB_TO_BACKUP} | tee -a ${BACKUP_LOG_FILE}
         fi
     else
         if [ "$COMPUTE_TYPE" == "postgres" ]; then
