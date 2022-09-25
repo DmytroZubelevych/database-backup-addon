@@ -6,13 +6,15 @@ cd tmp; wget https://github.com/alibaba/RedisShake/releases/download/v3.1.1/redi
 tar -xf redis-shake.tar.gz;
 grep -q '^cluster-enabled yes' /etc/redis.conf && REDIS_TYPE="cluster" || REDIS_TYPE="standalone";
 sed -ci -e "s/^type =.*/type = '${REDIS_TYPE}'/" restore.toml;
+sed -ci -e "1s/^type =.*/type = 'restore'/" restore.toml;
 export REDISCLI_AUTH=$(cat /etc/redis.conf |grep '^requirepass'|awk '{print $2}');
 sed -ci -e "s/^password =.*/password = '${REDISCLI_AUTH}'/" restore.toml;
 RESTORE_MASTER_ID=$(redis-cli cluster nodes|grep master|grep -v fail|head -n 1|awk '{print $2}'|awk -F : '{print $1}')
-sed -ci -e "s/^address =.*/address = '${RESTORE_MASTER_ID}'/" restore.toml;
+sed -ci -e "s/^address =.*/address = '${RESTORE_MASTER_ID}:6379'/" restore.toml;
 for i in ${RDB_TO_RESTORE}
 do
-    sed -ci -e "s/^rdb_file_path =.*/rdb_file_path = '${i}'/" restore.toml;
+    sed -ci -e "s|^rdb_file_path =.*|rdb_file_path = '${i}'|" restore.toml;
     ./redis-shake-linux-amd64 restore.toml
 done
 rm -f ${RDB_TO_RESTORE}
+rm -f redis-shake* sync.toml restore.toml 
