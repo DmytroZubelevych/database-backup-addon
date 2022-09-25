@@ -31,14 +31,8 @@ function backup(){
     echo $(date) ${ENV_NAME} "Creating and saving the DB dump to ${DUMP_NAME} snapshot" | tee -a ${BACKUP_LOG_FILE}
     if [ "$COMPUTE_TYPE" == "redis" ]; then
         export REDISCLI_AUTH=$(cat /etc/redis.conf |grep '^requirepass'|awk '{print $2}');
-        echo "BGSAVE" | redis-cli >/dev/null
-        finished=0
-        while [ $finished -eq 0 ]; do
-            sleep 2
-            echo "INFO PERSISTENCE" | redis-cli | grep -q "rdb_bgsave_in_progress:1"
-            finished=$?
-        done
-        RESTIC_PASSWORD=${ENV_NAME} restic -q -r /opt/backup/${ENV_NAME}  backup --tag "${DUMP_NAME} ${BACKUP_ADDON_COMMIT_ID} ${BACKUP_TYPE}" /var/lib/redis/dump.rdb | tee -a ${BACKUP_LOG_FILE}
+        redis-cli --rdb /tmp/standalone-dump.rdb
+        RESTIC_PASSWORD=${ENV_NAME} restic -q -r /opt/backup/${ENV_NAME}  backup --tag "${DUMP_NAME} ${BACKUP_ADDON_COMMIT_ID} ${BACKUP_TYPE}" /tmp/standalone-dump.rdb | tee -a ${BACKUP_LOG_FILE}
     else
         if [ "$COMPUTE_TYPE" == "postgres" ]; then
             PGPASSWORD="${DBPASSWD}" pg_dumpall -U ${DBUSER} > db_backup.sql
