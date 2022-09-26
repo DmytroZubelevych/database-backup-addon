@@ -36,7 +36,7 @@ function backup(){
         if [ "$REDIS_TYPE" == "-standalone" ]; then
             redis-cli --rdb /tmp/redis-dump-standalone.rdb
         else
-            export MASTERS_LIST=$(redis-cli cluster nodes|grep master|awk '{print $2}'|awk -F : '{print $1}');
+            export MASTERS_LIST=$(redis-cli cluster nodes|grep master|grep -v fail|awk '{print $2}'|awk -F : '{print $1}');
             for i in $MASTERS_LIST
             do
                 redis-cli -h $i --rdb /tmp/redis-dump-cluster-$i.rdb
