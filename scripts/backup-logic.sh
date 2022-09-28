@@ -46,7 +46,7 @@ function backup(){
         RESTIC_PASSWORD=${ENV_NAME} restic -q -r /opt/backup/${ENV_NAME}  backup --tag "${DUMP_NAME} ${BACKUP_ADDON_COMMIT_ID} ${BACKUP_TYPE}" ${RDB_TO_BACKUP} | tee -a ${BACKUP_LOG_FILE};
     else
         if [ "$COMPUTE_TYPE" == "postgres" ]; then
-            PGPASSWORD="${DBPASSWD}" pg_dumpall -U ${DBUSER} > db_backup.sql
+            PGPASSWORD="${DBPASSWD}" pg_dumpall -c -U ${DBUSER} > db_backup.sql
         else
             mysqldump -h localhost -u ${DBUSER} -p${DBPASSWD} --force --single-transaction --quote-names --opt --all-databases > db_backup.sql
         fi
