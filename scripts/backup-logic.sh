@@ -46,6 +46,7 @@ function backup(){
         RESTIC_PASSWORD=${ENV_NAME} restic -q -r /opt/backup/${ENV_NAME}  backup --tag "${DUMP_NAME} ${BACKUP_ADDON_COMMIT_ID} ${BACKUP_TYPE}" ${RDB_TO_BACKUP} | tee -a ${BACKUP_LOG_FILE};
     else
         if [ "$COMPUTE_TYPE" == "postgres" ]; then
+            PGPASSWORD="${DBPASSWD}" psql -U ${DBUSER} -d postgres -c "SELECT current_user" || { echo "DB credentials specified in add-on settings are incorrect!"; exit 1; }
             PGPASSWORD="${DBPASSWD}" pg_dumpall -U ${DBUSER} > db_backup.sql || { echo "DB backup process failed."; exit 1; }
             sed -ci -e '/^ALTER ROLE webadmin WITH SUPERUSER/d' db_backup.sql 
         else
