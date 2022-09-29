@@ -46,15 +46,15 @@ function backup(){
         RESTIC_PASSWORD=${ENV_NAME} restic -q -r /opt/backup/${ENV_NAME}  backup --tag "${DUMP_NAME} ${BACKUP_ADDON_COMMIT_ID} ${BACKUP_TYPE}" ${RDB_TO_BACKUP} | tee -a ${BACKUP_LOG_FILE};
     else
         if [ "$COMPUTE_TYPE" == "postgres" ]; then
-            PGPASSWORD="${DBPASSWD}" pg_dumpall -U ${DBUSER} > db_backup.sql
+            PGPASSWORD="${DBPASSWD}" pg_dumpall -U ${DBUSER} > db_backup.sql || exit 1;
             sed -ci -e '/^ALTER ROLE webadmin WITH SUPERUSER/d' db_backup.sql 
         else
-            mysqldump -h localhost -u ${DBUSER} -p${DBPASSWD} --force --single-transaction --quote-names --opt --all-databases > db_backup.sql
+            mysqldump -h localhost -u ${DBUSER} -p${DBPASSWD} --force --single-transaction --quote-names --opt --all-databases > db_backup.sql || exit 1;
         fi
         RESTIC_PASSWORD=${ENV_NAME} restic -q -r /opt/backup/${ENV_NAME}  backup --tag "${DUMP_NAME} ${BACKUP_ADDON_COMMIT_ID} ${BACKUP_TYPE}" ~/db_backup.sql | tee -a ${BACKUP_LOG_FILE}
     fi
     echo $(date) ${ENV_NAME} "Rotating snapshots by keeping the last ${BACKUP_COUNT}" | tee -a ${BACKUP_LOG_FILE}
-    RESTIC_PASSWORD=${ENV_NAME} restic forget -q -r /opt/backup/${ENV_NAME}  --keep-last ${BACKUP_COUNT} --prune | tee -a ${BACKUP_LOG_FILE}
+    RESTIC_PASSWORD=${ENV_NAME} restic forget -q -r /opt/backup/${ENV_NAME}  --keep-last ${BACKUP_COUNT} --prune | tee -a ${BACKUP_LOG_FILE} || exit 1;
     echo $(date) ${ENV_NAME} "Checking the backup repository integrity and consistency after adding the new snapshot and rotating old ones" | tee -a ${BACKUP_LOG_FILE}
     RESTIC_PASSWORD=${ENV_NAME} restic -q -r /opt/backup/${ENV_NAME}  check --read-data-subset=1/10 | tee -a ${BACKUP_LOG_FILE}
     rm -f /var/run/${ENV_NAME}_backup.pid
