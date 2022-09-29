@@ -8,7 +8,6 @@ cmd="CREATE USER '$USER'@'localhost' IDENTIFIED BY '$PASSWORD'; CREATE USER '$US
 unset resp;
 resp=$(mysql -u$USER -p$PASSWORD mysql --execute="SHOW COLUMNS FROM user")
 [ -z "$resp" ] && {
-   encPass=$(echo $ADMIN_PASSWORD | openssl enc -e -a -A -aes-128-cbc -nosalt -pass "pass:TFVhBKDOSBspeSXesw8fElCcOzbJzYed")
    eval mysqld_safe --skip-grant-tables --skip-networking --skip-slave-start --user=mysql  --pid-file=$pid &
    $MYSQL -uroot -p${ADMIN_PASSWORD} --execute="$cmd"
 } || {
