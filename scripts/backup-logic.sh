@@ -18,7 +18,7 @@ function backup(){
     [ -d /opt/backup/${ENV_NAME}  ] || mkdir -p /opt/backup/${ENV_NAME}
     RESTIC_PASSWORD=${ENV_NAME} restic -q -r /opt/backup/${ENV_NAME}  snapshots || RESTIC_PASSWORD=${ENV_NAME} restic init -r /opt/backup/${ENV_NAME} 
     echo $(date) ${ENV_NAME}  "Checking the backup repository integrity and consistency before adding the new snapshot" | tee -a ${BACKUP_LOG_FILE}
-    RESTIC_PASSWORD=${ENV_NAME} restic -q -r /opt/backup/${ENV_NAME} check | tee -a ${BACKUP_LOG_FILE} || { echo "Backup repository integrity check failed."; exit 1; }
+    { RESTIC_PASSWORD=${ENV_NAME} restic -q -r /opt/backup/${ENV_NAME} check | tee -a $BACKUP_LOG_FILE } || { echo "Backup repository integrity check (before backup) failed."; exit 1; }
     source /etc/jelastic/metainf.conf;
     if [ "$COMPUTE_TYPE" == "redis" ]; then
         if grep -q '^cluster-enabled yes' /etc/redis.conf; then
@@ -56,9 +56,9 @@ function backup(){
         RESTIC_PASSWORD=${ENV_NAME} restic -q -r /opt/backup/${ENV_NAME}  backup --tag "${DUMP_NAME} ${BACKUP_ADDON_COMMIT_ID} ${BACKUP_TYPE}" ~/db_backup.sql | tee -a ${BACKUP_LOG_FILE}
     fi
     echo $(date) ${ENV_NAME} "Rotating snapshots by keeping the last ${BACKUP_COUNT}" | tee -a ${BACKUP_LOG_FILE}
-    RESTIC_PASSWORD=${ENV_NAME} restic forget -q -r /opt/backup/${ENV_NAME}  --keep-last ${BACKUP_COUNT} --prune | tee -a ${BACKUP_LOG_FILE} || { echo "Backup rotation failed."; exit 1; }
+    { RESTIC_PASSWORD=${ENV_NAME} restic forget -q -r /opt/backup/${ENV_NAME} --keep-last ${BACKUP_COUNT} --prune | tee -a $BACKUP_LOG_FILE } || { echo "Backup rotation failed."; exit 1; }
     echo $(date) ${ENV_NAME} "Checking the backup repository integrity and consistency after adding the new snapshot and rotating old ones" | tee -a ${BACKUP_LOG_FILE}
-    RESTIC_PASSWORD=${ENV_NAME} restic -q -r /opt/backup/${ENV_NAME}  check --read-data-subset=1/10 | tee -a ${BACKUP_LOG_FILE}
+    { RESTIC_PASSWORD=${ENV_NAME} restic -q -r /opt/backup/${ENV_NAME}  check --read-data-subset=1/10 | tee -a $BACKUP_LOG_FILE } || { echo "Backup repository integrity check (after backup) failed."; exit 1; }
     rm -f /var/run/${ENV_NAME}_backup.pid
 }
 
