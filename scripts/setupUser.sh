@@ -4,6 +4,7 @@ USER=$1
 PASSWORD=$2
 USER_EMAIL=$3
 ENV_NAME=$4
+USER_SESSION=$5
 ADMIN_PASSWORD=$(pwgen 10 1)
 JEM=$(which jem)
 MYSQL=$(which mysql)
@@ -22,7 +23,7 @@ resp=$(mysql -u$USER -p$PASSWORD mysql --execute="SHOW COLUMNS FROM user")
             echo "Sending e-mail notification about setting the root password"
             SUBJECT="Password for 'root' db user has been changed for the restored database in the environment $ENV_NAME"
             BODY="Password for 'root' db user has been set to $ADMIN_PASSWORD after the DB restore in $ENV_NAME"
-            jem api apicall -s --connect-timeout 3 --max-time 15 [API_DOMAIN]/1.0/message/email/rest/send --data-urlencode "to=$USER_EMAIL" --data-urlencode "subject=$SUBJECT" --data-urlencode "body=$BODY"
+            jem api apicall -s --connect-timeout 3 --max-time 15 [API_DOMAIN]/1.0/message/email/rest/send --data-urlencode "session=$USER_SESSION" --data-urlencode "to=$USER_EMAIL" --data-urlencode "subject=$SUBJECT" --data-urlencode "body=$BODY"
             if [[ $? != 0 ]]; then
                 echo "Sending of e-mail notification failed"
             else
