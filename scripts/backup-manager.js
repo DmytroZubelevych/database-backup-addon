@@ -154,7 +154,7 @@ function BackupManager(config) {
 		'jem service restart',
 		'if [ -n "$REPLICA_PSWD" ] && [ -n "$REPLICA_USER" ] ; then wget %(baseUrl)/scripts/setupUser.sh -O /root/setupUser.sh &>> /var/log/run.log; bash /root/setupUser.sh ${REPLICA_USER} ${REPLICA_PSWD} %(userEmail) %(envName) %(userSession); fi'
             ], {
-                nodeGroup : config.nodeGroup,
+                nodeId : config.backupExecNode,
                 envName : config.envName,
 		baseUrl : config.baseUrl,
 		dbuser: config.dbuser,
