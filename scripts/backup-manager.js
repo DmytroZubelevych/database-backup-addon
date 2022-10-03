@@ -152,14 +152,15 @@ function BackupManager(config) {
 		'[ "$COMPUTE_TYPE" == "postgres" ] && PGPASSWORD=%(dbpass) psql -U %(dbuser) -d postgres < /root/db_backup.sql || true',
 		'if [ "$COMPUTE_TYPE" == "mariadb" ] || [ "$COMPUTE_TYPE" == "mysql" ] || [ "$COMPUTE_TYPE" == "percona" ]; then mysql -h localhost -u %(dbuser) -p%(dbpass) --force < /root/db_backup.sql; else true; fi',
 		'jem service restart',
-		'if [ -n "$REPLICA_PSWD" ] && [ -n "$REPLICA_USER" ] ; then wget %(baseUrl)/scripts/setupUser.sh -O /root/setupUser.sh &>> /var/log/run.log; bash /root/setupUser.sh ${REPLICA_USER} ${REPLICA_PSWD} %(userEmail) %(envName); fi'
+		'if [ -n "$REPLICA_PSWD" ] && [ -n "$REPLICA_USER" ] ; then wget %(baseUrl)/scripts/setupUser.sh -O /root/setupUser.sh &>> /var/log/run.log; bash /root/setupUser.sh ${REPLICA_USER} ${REPLICA_PSWD} %(userEmail) %(envName) %(userSession); fi'
             ], {
                 nodeGroup : config.nodeGroup,
                 envName : config.envName,
 		baseUrl : config.baseUrl,
 		dbuser: config.dbuser,
 		dbpass: config.dbpass,
-		userEmail: user.email
+		userEmail: user.email,
+		userSession: session,
             }],
         [ me.removeMounts ]
     ]);
