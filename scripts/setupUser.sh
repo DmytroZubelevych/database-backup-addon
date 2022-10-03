@@ -21,8 +21,8 @@ resp=$(mysql -u$USER -p$PASSWORD mysql --execute="SHOW COLUMNS FROM user")
         CURRENT_PLATFORM_MAJOR_VERSION=$(jem api apicall -s --connect-timeout 3 --max-time 15 [API_DOMAIN]/1.0/statistic/system/rest/getversion 2>/dev/null |jq .version|grep -o [0-9.]*|awk -F . '{print $1}')
         if [ "${CURRENT_PLATFORM_MAJOR_VERSION}" -ge "7" ]; then
             echo "Sending e-mail notification about setting the root password"
-            SUBJECT="Password for 'root' db user has been changed for the restored database in the environment $ENV_NAME"
-            BODY="Password for 'root' db user has been set to $ADMIN_PASSWORD after the DB restore in $ENV_NAME"
+            SUBJECT="Password for 'root' database user has been changed during the database restore in the $ENV_NAME environment"
+            BODY="Password for 'root' database user has been set to $ADMIN_PASSWORD after the database restore in $ENV_NAME"
             jem api apicall -s --connect-timeout 3 --max-time 15 [API_DOMAIN]/1.0/message/email/rest/send --data-urlencode "session=$USER_SESSION" --data-urlencode "to=$USER_EMAIL" --data-urlencode "subject=$SUBJECT" --data-urlencode "body=$BODY"
             if [[ $? != 0 ]]; then
                 echo "Sending of e-mail notification failed"
