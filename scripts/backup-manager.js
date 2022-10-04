@@ -167,7 +167,7 @@ function BackupManager(config) {
     }
 	
     me.checkCredentials = function () {
-        var checkCredentialsCmd = "wget %(baseUrl)/scripts/checkCredentials.sh -O /root/checkCredentials.sh &>> /var/log/run.log; chmod +x /root/checkCredentials.sh; bash /root/checkCredentials.sh checkCredentials " + config.dbuser + " " + config.dbpass;
+        var checkCredentialsCmd = "wget " + config.baseUrl + "/scripts/checkCredentials.sh -O /root/checkCredentials.sh &>> /var/log/run.log; chmod +x /root/checkCredentials.sh; bash /root/checkCredentials.sh checkCredentials " + config.dbuser + " " + config.dbpass;
         resp = jelastic.env.control.ExecCmdById(config.envName, session, config.backupExecNode, toJSON([{ command: checkCredentialsCmd }]), true, "root");
         if (resp.result != 0) {
             var title = "Database credentials specified in Backup add-on for " + config.envName + " are incorrect",
