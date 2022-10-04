@@ -115,7 +115,6 @@ function BackupManager(config) {
             [ me.checkEnvStatus ],
             [ me.checkStorageEnvStatus ],
 	    [ me.checkCurrentlyRunningBackup ],
-	    [ me.checkCredentials ],
             [ me.removeMounts ],
             [ me.addMountForBackupRestore ],
             [ me.cmd, [
@@ -141,7 +140,6 @@ function BackupManager(config) {
             [ me.checkEnvStatus ],
             [ me.checkStorageEnvStatus ],
 	    [ me.checkCurrentlyRunningBackup ],
-	    [ me.checkCredentials ],
             [ me.removeMounts ],
             [ me.addMountForBackupRestore ],
             [ me.cmd, [
