@@ -18,8 +18,8 @@ resp=$(mysql -u$USER -p$PASSWORD mysql --execute="SHOW COLUMNS FROM user")
    $MYSQL -uroot -p${ADMIN_PASSWORD} --execute="$cmd"
      if [ -e "/usr/lib/jelastic/modules/api.module" ]; then
         [ -e "/var/run/jem.pid" ] && return 0;
-        CURRENT_PLATFORM_MAJOR_VERSION=$(jem api apicall -s --connect-timeout 3 --max-time 15 [API_DOMAIN]/1.0/statistic/system/rest/getversion 2>/dev/null |jq .version|grep -o [0-9.]*|awk -F . '{print $1}')
-        if [ "${CURRENT_PLATFORM_MAJOR_VERSION}" -ge "7" ]; then
+        CURRENT_PLATFORM_MAJOR_VERSION=$(jem api apicall -s --connect-timeout 3 --max-time 15 [API_DOMAIN]/1.0/statistic/system/rest/getversion 2>/dev/null |jq .version|grep -o [0-9.]*|awk -F . '{print $1$2}')
+        if [ "${CURRENT_PLATFORM_MAJOR_VERSION}" -ge "71" ]; then
             echo "Sending e-mail notification about setting the root password"
             SUBJECT="Password for 'root' database user has been changed during the database restore in the $ENV_NAME environment"
             BODY="Password for 'root' database user has been set to $ADMIN_PASSWORD after the database restore in $ENV_NAME"
