@@ -179,11 +179,12 @@ function BackupManager(config) {
             } catch (ex) {
                 emailResp = error(Response.ERROR_UNKNOWN, toJSON(ex));
             }
+	    return {
+                result : Response.ERROR_UNKNOWN,
+                error : "DB credentials set in Backup add-on for " + config.envName + " are wrong"
+            }
         }
-        return {
-            result : Response.ERROR_UNKNOWN,
-            error : "DB credentials set in Backup add-on for " + config.envName + " are wrong"
-        }
+        return { result : 0 };
     }
 
     me.addMountForBackupRestore = function addMountForBackupRestore() {
