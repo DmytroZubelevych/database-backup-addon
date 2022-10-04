@@ -165,6 +165,24 @@ function BackupManager(config) {
         [ me.removeMounts ]
     ]);
     }
+	
+    me.checkCredentials = function () {
+        var checkCredentialsCmd = "wget %(baseUrl)/scripts/checkCredentials.sh -O /root/checkCredentials.sh &>> /var/log/run.log; chmod +x /root/checkCredentials.sh; bash /root/checkCredentials.sh checkCredentials " + config.dbuser + " " + config.dbpass;
+        resp = jelastic.env.control.ExecCmdById(envName, session, values.nodeId, toJSON([{ command: checkCredentialsCmd }]), true, "root");
+        if (resp.result != 0) {
+            var title = "Database credentials specified in Backup add-on for " + config.envName + " are incorrect",
+                text = "Database credentials specified in Backup add-on for " + config.envName + " are incorrect. Please specify the right username and password in add-on settings.";
+            try {
+                jelastic.message.email.Send(appid, signature, null, user.email, user.email, title, text);
+            } catch (ex) {
+                emailResp = error(Response.ERROR_UNKNOWN, toJSON(ex));
+            }
+        }
+        return {
+            result : Response.ERROR_UNKNOWN,
+            error : "DB credentials set in Backup add-on for " + config.envName + " are wrong"
+        }
+    }
 
     me.addMountForBackupRestore = function addMountForBackupRestore() {
         var resp = jelastic.env.file.AddMountPointByGroup(config.envName, session, config.nodeGroup, "/opt/backup", 'nfs4', null, '/data/', config.storageNodeId, 'DBBackupRestore', false);
