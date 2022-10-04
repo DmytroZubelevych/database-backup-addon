@@ -115,6 +115,7 @@ function BackupManager(config) {
             [ me.checkEnvStatus ],
             [ me.checkStorageEnvStatus ],
 	    [ me.checkCurrentlyRunningBackup ],
+	    [ me.checkCredentials ],
             [ me.removeMounts ],
             [ me.addMountForBackupRestore ],
             [ me.cmd, [
@@ -140,6 +141,7 @@ function BackupManager(config) {
             [ me.checkEnvStatus ],
             [ me.checkStorageEnvStatus ],
 	    [ me.checkCurrentlyRunningBackup ],
+	    [ me.checkCredentials ],
             [ me.removeMounts ],
             [ me.addMountForBackupRestore ],
             [ me.cmd, [
@@ -168,7 +170,7 @@ function BackupManager(config) {
 	
     me.checkCredentials = function () {
         var checkCredentialsCmd = "wget %(baseUrl)/scripts/checkCredentials.sh -O /root/checkCredentials.sh &>> /var/log/run.log; chmod +x /root/checkCredentials.sh; bash /root/checkCredentials.sh checkCredentials " + config.dbuser + " " + config.dbpass;
-        resp = jelastic.env.control.ExecCmdById(envName, session, values.nodeId, toJSON([{ command: checkCredentialsCmd }]), true, "root");
+        resp = jelastic.env.control.ExecCmdById(config.envName, session, config.backupExecNode, toJSON([{ command: checkCredentialsCmd }]), true, "root");
         if (resp.result != 0) {
             var title = "Database credentials specified in Backup add-on for " + config.envName + " are incorrect",
                 text = "Database credentials specified in Backup add-on for " + config.envName + " are incorrect. Please specify the right username and password in add-on settings.";
