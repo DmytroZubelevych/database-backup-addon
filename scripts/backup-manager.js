@@ -127,10 +127,6 @@ function BackupManager(config) {
 		baseUrl : config.baseUrl
 	    }],
             [ me.cmd, [
-		'bash /root/%(envName)_backup-logic.sh check_backup_repo %(baseUrl) %(backupType) %(nodeId) %(backupLogFile) %(envName) %(backupCount) %(dbuser) %(dbpass)',
-		'bash /root/%(envName)_backup-logic.sh backup %(baseUrl) %(backupType) %(nodeId) %(backupLogFile) %(envName) %(backupCount) %(dbuser) %(dbpass)',
-		'bash /root/%(envName)_backup-logic.sh create_snapshot %(baseUrl) %(backupType) %(nodeId) %(backupLogFile) %(envName) %(backupCount) %(dbuser) %(dbpass)',
-		'bash /root/%(envName)_backup-logic.sh rotate_snapshots %(baseUrl) %(backupType) %(nodeId) %(backupLogFile) %(envName) %(backupCount) %(dbuser) %(dbpass)',
                 'bash /root/%(envName)_backup-logic.sh check_backup_repo %(baseUrl) %(backupType) %(nodeId) %(backupLogFile) %(envName) %(backupCount) %(dbuser) %(dbpass)'
             ], {
                 nodeId : config.backupExecNode,
@@ -139,8 +135,56 @@ function BackupManager(config) {
                 backupLogFile : "/var/log/backup_addon.log",
                 baseUrl : config.baseUrl,
                 backupType : backupType,
-		dbuser: config.dbuser,
-		dbpass: config.dbpass
+                dbuser: config.dbuser,
+                dbpass: config.dbpass
+            }],
+            [ me.cmd, [
+                'bash /root/%(envName)_backup-logic.sh backup %(baseUrl) %(backupType) %(nodeId) %(backupLogFile) %(envName) %(backupCount) %(dbuser) %(dbpass)'
+            ], {
+                nodeId : config.backupExecNode,
+                envName : config.envName,
+                backupCount : config.backupCount,
+                backupLogFile : "/var/log/backup_addon.log",
+                baseUrl : config.baseUrl,
+                backupType : backupType,
+                dbuser: config.dbuser,
+                dbpass: config.dbpass
+            }],
+            [ me.cmd, [
+                'bash /root/%(envName)_backup-logic.sh create_snapshot %(baseUrl) %(backupType) %(nodeId) %(backupLogFile) %(envName) %(backupCount) %(dbuser) %(dbpass)'
+            ], {
+                nodeId : config.backupExecNode,
+                envName : config.envName,
+                backupCount : config.backupCount,
+                backupLogFile : "/var/log/backup_addon.log",
+                baseUrl : config.baseUrl,
+                backupType : backupType,
+                dbuser: config.dbuser,
+                dbpass: config.dbpass
+            }],
+            [ me.cmd, [
+                'bash /root/%(envName)_backup-logic.sh rotate_snapshots %(baseUrl) %(backupType) %(nodeId) %(backupLogFile) %(envName) %(backupCount) %(dbuser) %(dbpass)'
+            ], {
+                nodeId : config.backupExecNode,
+                envName : config.envName,
+                backupCount : config.backupCount,
+                backupLogFile : "/var/log/backup_addon.log",
+                baseUrl : config.baseUrl,
+                backupType : backupType,
+                dbuser: config.dbuser,
+                dbpass: config.dbpass
+            }],
+            [ me.cmd, [
+                'bash /root/%(envName)_backup-logic.sh check_backup_repo %(baseUrl) %(backupType) %(nodeId) %(backupLogFile) %(envName) %(backupCount) %(dbuser) %(dbpass)'
+            ], {
+                nodeId : config.backupExecNode,
+                envName : config.envName,
+                backupCount : config.backupCount,
+                backupLogFile : "/var/log/backup_addon.log",
+                baseUrl : config.baseUrl,
+                backupType : backupType,
+                dbuser: config.dbuser,
+                dbpass: config.dbpass
             }],
         [ me.removeMounts ]
         ]);
