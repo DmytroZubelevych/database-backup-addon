@@ -21,6 +21,10 @@ function rotate_snapshots(){
     { RESTIC_PASSWORD=${ENV_NAME} restic forget -q -r /opt/backup/${ENV_NAME} --keep-last ${BACKUP_COUNT} --prune | tee -a $BACKUP_LOG_FILE; } || { echo "Backup rotation failed."; exit 1; }
 }
 
+function create_snapshot(){
+    RESTIC_PASSWORD=${ENV_NAME} restic -q -r /opt/backup/${ENV_NAME}  backup --tag "${DUMP_NAME} ${BACKUP_ADDON_COMMIT_ID} ${BACKUP_TYPE}" ~/db_backup.sql | tee -a ${BACKUP_LOG_FILE}
+}
+
 function backup(){
     echo $$ > /var/run/${ENV_NAME}_backup.pid
     BACKUP_ADDON_REPO=$(echo ${BASE_URL}|sed 's|https:\/\/raw.githubusercontent.com\/||'|awk -F / '{print $1"/"$2}')
@@ -61,7 +65,6 @@ function backup(){
             mysql -h localhost -u ${DBUSER} -p${DBPASSWD} mysql --execute="SHOW COLUMNS FROM user" || { echo "DB credentials specified in add-on settings are incorrect!"; exit 1; }
             mysqldump -h localhost -u ${DBUSER} -p${DBPASSWD} --force --single-transaction --quote-names --opt --all-databases > db_backup.sql || { echo "DB backup process failed."; exit 1; }
         fi
-        RESTIC_PASSWORD=${ENV_NAME} restic -q -r /opt/backup/${ENV_NAME}  backup --tag "${DUMP_NAME} ${BACKUP_ADDON_COMMIT_ID} ${BACKUP_TYPE}" ~/db_backup.sql | tee -a ${BACKUP_LOG_FILE}
     fi
     rm -f /var/run/${ENV_NAME}_backup.pid
 }
@@ -76,8 +79,11 @@ case "$1" in
     rotate_snapshots)
         $1
         ;;
+    create_snapshot)
+	$1
+	;;
     *)
-        echo "Usage: $0 {backup|check_backup_repo|rotate_snapshots}"
+        echo "Usage: $0 {backup|check_backup_repo|rotate_snapshots|create_snapshot}"
         exit 2
 esac
 
