@@ -110,17 +110,6 @@ function BackupManager(config) {
         } else {
             backupType = "auto";
         }
-
-	var backupCallParams = {
-                nodeId : config.backupExecNode,
-                envName : config.envName,
-                backupCount : config.backupCount,
-                backupLogFile : "/var/log/backup_addon.log",
-                baseUrl : config.baseUrl,
-                backupType : backupType,
-                dbuser: config.dbuser,
-                dbpass: config.dbpass
-            }
         
         return me.exec([
             [ me.checkEnvStatus ],
@@ -131,31 +120,22 @@ function BackupManager(config) {
             [ me.addMountForBackupRestore ],
             [ me.cmd, [
 		'[ -f /root/%(envName)_backup-logic.sh ] && rm -f /root/%(envName)_backup-logic.sh || true',
-                'wget -O /root/%(envName)_backup-logic.sh %(baseUrl)/scripts/backup-logic.sh'
-            ], {
-		nodeId : config.backupExecNode,
-                envName : config.envName,
-		baseUrl : config.baseUrl
-	    }],
-            [ me.cmd, [
-                'bash /root/%(envName)_backup-logic.sh check_backup_repo %(baseUrl) %(backupType) %(nodeId) %(backupLogFile) %(envName) %(backupCount) %(dbuser) %(dbpass)'
-            ], backupCallParams ],
-	    [ me.cmd, [
+                'wget -O /root/%(envName)_backup-logic.sh %(baseUrl)/scripts/backup-logic.sh',
                 'bash /root/%(envName)_backup-logic.sh backup %(baseUrl) %(backupType) %(nodeId) %(backupLogFile) %(envName) %(backupCount) %(dbuser) %(dbpass)'
-            ], backupCallParams ],
-	    [ me.cmd, [
-                'bash /root/%(envName)_backup-logic.sh create_snapshot %(baseUrl) %(backupType) %(nodeId) %(backupLogFile) %(envName) %(backupCount) %(dbuser) %(dbpass)'
-            ], backupCallParams ],
-            [ me.cmd, [
-                'bash /root/%(envName)_backup-logic.sh rotate_snapshots %(baseUrl) %(backupType) %(nodeId) %(backupLogFile) %(envName) %(backupCount) %(dbuser) %(dbpass)'
-            ], backupCallParams ],
-            [ me.cmd, [
-                'bash /root/%(envName)_backup-logic.sh check_backup_repo %(baseUrl) %(backupType) %(nodeId) %(backupLogFile) %(envName) %(backupCount) %(dbuser) %(dbpass)'
-            ], backupCallParams ],
+            ], {
+                nodeId : config.backupExecNode,
+                envName : config.envName,
+                backupCount : config.backupCount,
+                backupLogFile : "/var/log/backup_addon.log",
+                baseUrl : config.baseUrl,
+                backupType : backupType,
+		dbuser: config.dbuser,
+		dbpass: config.dbpass
+            }],
         [ me.removeMounts ]
         ]);
     };
-
+    
     me.restore = function () {
         return me.exec([
             [ me.checkEnvStatus ],
