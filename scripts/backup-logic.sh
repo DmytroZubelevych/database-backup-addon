@@ -9,16 +9,28 @@ BACKUP_COUNT=$7
 DBUSER=$8
 DBPASSWD=$9
 
+function check_backup_repo(){
+    [ -d /opt/backup/${ENV_NAME}  ] || mkdir -p /opt/backup/${ENV_NAME}
+    RESTIC_PASSWORD=${ENV_NAME} restic -q -r /opt/backup/${ENV_NAME}  snapshots || RESTIC_PASSWORD=${ENV_NAME} restic init -r /opt/backup/${ENV_NAME}
+    echo $(date) ${ENV_NAME}  "Checking the backup repository integrity and consistency" | tee -a ${BACKUP_LOG_FILE}
+    { RESTIC_PASSWORD=${ENV_NAME} restic -q -r /opt/backup/${ENV_NAME} check | tee -a $BACKUP_LOG_FILE; } || { echo "Backup repository integrity check (before backup) failed."; exit 1; }
+}
+
+function rotate_snapshots(){
+    echo $(date) ${ENV_NAME} "Rotating snapshots by keeping the last ${BACKUP_COUNT}" | tee -a ${BACKUP_LOG_FILE}
+    { RESTIC_PASSWORD=${ENV_NAME} restic forget -q -r /opt/backup/${ENV_NAME} --keep-last ${BACKUP_COUNT} --prune | tee -a $BACKUP_LOG_FILE; } || { echo "Backup rotation failed."; exit 1; }
+}
+
+function create_snapshot(){
+    RESTIC_PASSWORD=${ENV_NAME} restic -q -r /opt/backup/${ENV_NAME}  backup --tag "${DUMP_NAME} ${BACKUP_ADDON_COMMIT_ID} ${BACKUP_TYPE}" ~/db_backup.sql | tee -a ${BACKUP_LOG_FILE}
+}
+
 function backup(){
     echo $$ > /var/run/${ENV_NAME}_backup.pid
     BACKUP_ADDON_REPO=$(echo ${BASE_URL}|sed 's|https:\/\/raw.githubusercontent.com\/||'|awk -F / '{print $1"/"$2}')
     BACKUP_ADDON_BRANCH=$(echo ${BASE_URL}|sed 's|https:\/\/raw.githubusercontent.com\/||'|awk -F / '{print $3}')
     BACKUP_ADDON_COMMIT_ID=$(git ls-remote https://github.com/${BACKUP_ADDON_REPO}.git | grep "/${BACKUP_ADDON_BRANCH}$" | awk '{print $1}')
     echo $(date) ${ENV_NAME} "Creating the ${BACKUP_TYPE} backup (using the backup addon with commit id ${BACKUP_ADDON_COMMIT_ID}) on storage node ${NODE_ID}" | tee -a ${BACKUP_LOG_FILE}
-    [ -d /opt/backup/${ENV_NAME}  ] || mkdir -p /opt/backup/${ENV_NAME}
-    RESTIC_PASSWORD=${ENV_NAME} restic -q -r /opt/backup/${ENV_NAME}  snapshots || RESTIC_PASSWORD=${ENV_NAME} restic init -r /opt/backup/${ENV_NAME} 
-    echo $(date) ${ENV_NAME}  "Checking the backup repository integrity and consistency before adding the new snapshot" | tee -a ${BACKUP_LOG_FILE}
-    { RESTIC_PASSWORD=${ENV_NAME} restic -q -r /opt/backup/${ENV_NAME} check | tee -a $BACKUP_LOG_FILE; } || { echo "Backup repository integrity check (before backup) failed."; exit 1; }
     source /etc/jelastic/metainf.conf;
     if [ "$COMPUTE_TYPE" == "redis" ]; then
         if grep -q '^cluster-enabled yes' /etc/redis.conf; then
@@ -53,15 +65,26 @@ function backup(){
             mysql -h localhost -u ${DBUSER} -p${DBPASSWD} mysql --execute="SHOW COLUMNS FROM user" || { echo "DB credentials specified in add-on settings are incorrect!"; exit 1; }
             mysqldump -h localhost -u ${DBUSER} -p${DBPASSWD} --force --single-transaction --quote-names --opt --all-databases > db_backup.sql || { echo "DB backup process failed."; exit 1; }
         fi
-        RESTIC_PASSWORD=${ENV_NAME} restic -q -r /opt/backup/${ENV_NAME}  backup --tag "${DUMP_NAME} ${BACKUP_ADDON_COMMIT_ID} ${BACKUP_TYPE}" ~/db_backup.sql | tee -a ${BACKUP_LOG_FILE}
     fi
-    echo $(date) ${ENV_NAME} "Rotating snapshots by keeping the last ${BACKUP_COUNT}" | tee -a ${BACKUP_LOG_FILE}
-    { RESTIC_PASSWORD=${ENV_NAME} restic forget -q -r /opt/backup/${ENV_NAME} --keep-last ${BACKUP_COUNT} --prune | tee -a $BACKUP_LOG_FILE; } || { echo "Backup rotation failed."; exit 1; }
-    echo $(date) ${ENV_NAME} "Checking the backup repository integrity and consistency after adding the new snapshot and rotating old ones" | tee -a ${BACKUP_LOG_FILE}
-    { RESTIC_PASSWORD=${ENV_NAME} restic -q -r /opt/backup/${ENV_NAME}  check --read-data-subset=1/10 | tee -a $BACKUP_LOG_FILE; } || { echo "Backup repository integrity check (after backup) failed."; exit 1; }
     rm -f /var/run/${ENV_NAME}_backup.pid
 }
 
-if [ "x$1" == "xbackup" ]; then
-    backup
-fi
+case "$1" in
+    backup)
+        $1
+        ;;
+    check_backup_repo)
+        $1
+        ;;
+    rotate_snapshots)
+        $1
+        ;;
+    create_snapshot)
+	$1
+	;;
+    *)
+        echo "Usage: $0 {backup|check_backup_repo|rotate_snapshots|create_snapshot}"
+        exit 2
+esac
+
+exit $?
