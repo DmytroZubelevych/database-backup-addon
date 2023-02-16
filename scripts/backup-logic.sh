@@ -13,6 +13,14 @@ BACKUP_ADDON_REPO=$(echo ${BASE_URL}|sed 's|https:\/\/raw.githubusercontent.com\
 BACKUP_ADDON_BRANCH=$(echo ${BASE_URL}|sed 's|https:\/\/raw.githubusercontent.com\/||'|awk -F / '{print $3}')
 BACKUP_ADDON_COMMIT_ID=$(git ls-remote https://github.com/${BACKUP_ADDON_REPO}.git | grep "/${BACKUP_ADDON_BRANCH}$" | awk '{print $1}')
 
+if [ "$COMPUTE_TYPE" == "redis" ]; then
+    if grep -q '^cluster-enabled yes' /etc/redis.conf; then
+        REDIS_TYPE="-cluster"
+    else
+        REDIS_TYPE="-standalone"
+    fi
+fi
+
 function check_backup_repo(){
     [ -d /opt/backup/${ENV_NAME}  ] || mkdir -p /opt/backup/${ENV_NAME}
     RESTIC_PASSWORD=${ENV_NAME} restic -q -r /opt/backup/${ENV_NAME}  snapshots || RESTIC_PASSWORD=${ENV_NAME} restic init -r /opt/backup/${ENV_NAME}
@@ -26,23 +34,21 @@ function rotate_snapshots(){
 }
 
 function create_snapshot(){
-
-    RESTIC_PASSWORD=${ENV_NAME} restic -q -r /opt/backup/${ENV_NAME}  backup --tag "${DUMP_NAME} ${BACKUP_ADDON_COMMIT_ID} ${BACKUP_TYPE}" ~/db_backup.sql | tee -a ${BACKUP_LOG_FILE}
+    echo $(date) ${ENV_NAME} "Saving the DB dump to ${DUMP_NAME} snapshot" | tee -a ${BACKUP_LOG_FILE}
+    DUMP_NAME=$(date "+%F_%H%M%S"-\($COMPUTE_TYPE-$COMPUTE_TYPE_FULL_VERSION$REDIS_TYPE\))
+    if [ "$COMPUTE_TYPE" == "redis" ]; then
+        RDB_TO_BACKUP=$(ls -d /tmp/* |grep redis-dump.*);
+        RESTIC_PASSWORD=${ENV_NAME} restic -q -r /opt/backup/${ENV_NAME}  backup --tag "${DUMP_NAME} ${BACKUP_ADDON_COMMIT_ID} ${BACKUP_TYPE}" ${RDB_TO_BACKUP} | tee -a ${BACKUP_LOG_FILE};
+    else
+        RESTIC_PASSWORD=${ENV_NAME} restic -q -r /opt/backup/${ENV_NAME}  backup --tag "${DUMP_NAME} ${BACKUP_ADDON_COMMIT_ID} ${BACKUP_TYPE}" ~/db_backup.sql | tee -a ${BACKUP_LOG_FILE}
+    fi
 }
 
 function backup(){
     echo $$ > /var/run/${ENV_NAME}_backup.pid
     echo $(date) ${ENV_NAME} "Creating the ${BACKUP_TYPE} backup (using the backup addon with commit id ${BACKUP_ADDON_COMMIT_ID}) on storage node ${NODE_ID}" | tee -a ${BACKUP_LOG_FILE}
     source /etc/jelastic/metainf.conf;
-    if [ "$COMPUTE_TYPE" == "redis" ]; then
-        if grep -q '^cluster-enabled yes' /etc/redis.conf; then
-            REDIS_TYPE="-cluster"
-        else
-            REDIS_TYPE="-standalone"
-        fi
-    fi
-    DUMP_NAME=$(date "+%F_%H%M%S"-\($COMPUTE_TYPE-$COMPUTE_TYPE_FULL_VERSION$REDIS_TYPE\))
-    echo $(date) ${ENV_NAME} "Creating and saving the DB dump to ${DUMP_NAME} snapshot" | tee -a ${BACKUP_LOG_FILE}
+    echo $(date) ${ENV_NAME} "Creating the DB dump" | tee -a ${BACKUP_LOG_FILE}
     if [ "$COMPUTE_TYPE" == "redis" ]; then
         RDB_TO_REMOVE=$(ls -d /tmp/* |grep redis-dump.*)
         rm -f ${RDB_TO_REMOVE}
@@ -56,8 +62,6 @@ function backup(){
                 redis-cli -h $i --rdb /tmp/redis-dump-cluster-$i.rdb || { echo "DB backup process failed."; exit 1; }
             done
         fi
-        RDB_TO_BACKUP=$(ls -d /tmp/* |grep redis-dump.*);
-        RESTIC_PASSWORD=${ENV_NAME} restic -q -r /opt/backup/${ENV_NAME}  backup --tag "${DUMP_NAME} ${BACKUP_ADDON_COMMIT_ID} ${BACKUP_TYPE}" ${RDB_TO_BACKUP} | tee -a ${BACKUP_LOG_FILE};
     else
         if [ "$COMPUTE_TYPE" == "postgres" ]; then
             PGPASSWORD="${DBPASSWD}" psql -U ${DBUSER} -d postgres -c "SELECT current_user" || { echo "DB credentials specified in add-on settings are incorrect!"; exit 1; }
