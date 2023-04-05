@@ -128,7 +128,7 @@ function BackupManager(config) {
 	    [ me.checkCurrentlyRunningBackup ],
 	    [ me.checkCredentials ],
             [ me.removeMounts ],
-            [ me.addMountForBackupRestore ],
+            [ me.addMountForBackup ],
             [ me.cmd, [
 		'[ -f /root/%(envName)_backup-logic.sh ] && rm -f /root/%(envName)_backup-logic.sh || true',
                 'wget -O /root/%(envName)_backup-logic.sh %(baseUrl)/scripts/backup-logic.sh'
@@ -163,7 +163,7 @@ function BackupManager(config) {
 	    [ me.checkCurrentlyRunningBackup ],
 	    [ me.checkCredentials ],
             [ me.removeMounts ],
-            [ me.addMountForBackupRestore ],
+            [ me.addMountForRestore ],
             [ me.cmd, [
 		'echo $(date) %(envName) Restoring the snapshot $(cat /root/.backupid)', 
                 'SNAPSHOT_ID=$(RESTIC_PASSWORD=$(cat /root/.backupedenv) restic -r /opt/backup/$(cat /root/.backupedenv) snapshots|grep $(cat /root/.backupid)|awk \'{print $1}\')',
