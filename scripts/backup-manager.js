@@ -208,7 +208,7 @@ function BackupManager(config) {
     }
 
     me.addMountForBackupRestore = function addMountForBackupRestore() {
-        var resp = jelastic.env.file.AddMountPointByGroup(config.envName, session, config.nodeGroup, "/opt/backup", 'nfs4', null, '/data/', config.storageNodeId, 'DBBackupRestore', false);
+        var resp = jelastic.env.file.AddMountPointById(config.envName, session, config.backupExecNode, "/opt/backup", 'nfs4', null, '/data/', config.storageNodeId, 'DBBackupRestore', false);
         if (resp.result != 0) {
             var title = "Backup storage " + config.storageEnv + " is unreacheable",
                 text = "Backup storage environment " + config.storageEnv + " is not accessible for storing backups from " + config.envName + ". The error message is " + resp.error;
@@ -224,8 +224,20 @@ function BackupManager(config) {
     me.removeMounts = function removeMountForBackup() {
         var allMounts = jelastic.env.file.GetMountPoints(config.envName, session, config.backupExecNode).array;
         for (var i = 0, n = allMounts.length; i < n; i++) {
-            if (allMounts[i].path == "/opt/backup" && allMounts[i].type == "INTERNAL") {
-                return jelastic.env.file.RemoveMountPointByGroup(config.envName, session, config.nodeGroup, "/opt/backup");
+            if (allMounts[i].sourcePath == "/data" && allMounts[i].path == "/opt/backup" && allMounts[i].name == "WPBackupRestore" && allMounts[i].type == "INTERNAL") {
+                var resp = jelastic.env.file.RemoveMountPointById(config.envName, session, config.backupExecNode, "/opt/backup");
+                if (resp.result != 0) {
+                    return resp;
+                }
+            }
+        }
+        allMounts = jelastic.env.file.GetMountPoints(config.envName, session).array;
+        for (var i = 0, n = allMounts.length; i < n; i++) {
+            if (allMounts[i].sourcePath == "/data" && allMounts[i].path == "/opt/backup" && allMounts[i].name == "WPBackupRestore" && allMounts[i].type == "INTERNAL") {
+                resp = jelastic.env.file.RemoveMountPointByGroup(config.envName, session, "cp", "/opt/backup");
+                if (resp.result != 0) {
+                    return resp;
+                }
             }
         }
         return {
