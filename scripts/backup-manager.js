@@ -208,6 +208,8 @@ function BackupManager(config) {
     }
 
     me.addMountForBackupRestore = function addMountForBackupRestore() {
+	var delay = (Math.floor(Math.random() * 50) * 1000);
+	java.lang.Thread.sleep(delay);
 	var resp = jelastic.env.file.AddMountPointById(config.envName, session, config.backupExecNode, "/opt/backup", 'nfs4', null, '/data/', config.storageNodeId, 'DBBackupRestore', false);
         if (resp.result != 0) {
             var title = "Backup storage " + config.storageEnv + " is unreacheable",
