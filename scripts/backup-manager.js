@@ -227,7 +227,7 @@ function BackupManager(config) {
         var allMounts = jelastic.env.file.GetMountPoints(config.envName, session, config.backupExecNode).array;
         for (var i = 0, n = allMounts.length; i < n; i++) {
             if (allMounts[i].path == "/opt/backup" && allMounts[i].type == "INTERNAL") {
-                return jelastic.env.file.RemoveMountPointId(config.envName, session, config.backupExecNode, "/opt/backup");
+                return jelastic.env.file.RemoveMountPointById(config.envName, session, config.backupExecNode, "/opt/backup");
                 if (resp.result != 0) {
                     return resp;
                 }
