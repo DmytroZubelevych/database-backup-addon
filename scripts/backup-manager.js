@@ -128,7 +128,7 @@ function BackupManager(config) {
 	    [ me.checkCurrentlyRunningBackup ],
 	    [ me.checkCredentials ],
             [ me.removeMounts ],
-            [ me.addMountForBackupRestore ],
+            [ me.addMountForBackup ],
             [ me.cmd, [
 		'[ -f /root/%(envName)_backup-logic.sh ] && rm -f /root/%(envName)_backup-logic.sh || true',
                 'wget -O /root/%(envName)_backup-logic.sh %(baseUrl)/scripts/backup-logic.sh'
@@ -163,7 +163,7 @@ function BackupManager(config) {
 	    [ me.checkCurrentlyRunningBackup ],
 	    [ me.checkCredentials ],
             [ me.removeMounts ],
-            [ me.addMountForBackupRestore ],
+            [ me.addMountForRestore ],
             [ me.cmd, [
 		'echo $(date) %(envName) Restoring the snapshot $(cat /root/.backupid)', 
                 'SNAPSHOT_ID=$(RESTIC_PASSWORD=$(cat /root/.backupedenv) restic -r /opt/backup/$(cat /root/.backupedenv) snapshots|grep $(cat /root/.backupid)|awk \'{print $1}\')',
@@ -207,8 +207,14 @@ function BackupManager(config) {
         return { result : 0 };
     }
 
-    me.addMountForBackupRestore = function addMountForBackupRestore() {
-        var resp = jelastic.env.file.AddMountPointByGroup(config.envName, session, config.nodeGroup, "/opt/backup", 'nfs4', null, '/data/', config.storageNodeId, 'DBBackupRestore', false);
+    me.addMountForBackup = function addMountForBackup() {
+	var delay = (Math.floor(Math.random() * 50) * 1000);
+	java.lang.Thread.sleep(delay);
+        return me.addMountForRestore();
+    }
+	
+    me.addMountForRestore = function addMountForRestore() {
+	var resp = jelastic.env.file.AddMountPointById(config.envName, session, config.backupExecNode, "/opt/backup", 'nfs4', null, '/data/', config.storageNodeId, 'DBBackupRestore', false);
         if (resp.result != 0) {
             var title = "Backup storage " + config.storageEnv + " is unreacheable",
                 text = "Backup storage environment " + config.storageEnv + " is not accessible for storing backups from " + config.envName + ". The error message is " + resp.error;
@@ -225,7 +231,19 @@ function BackupManager(config) {
         var allMounts = jelastic.env.file.GetMountPoints(config.envName, session, config.backupExecNode).array;
         for (var i = 0, n = allMounts.length; i < n; i++) {
             if (allMounts[i].path == "/opt/backup" && allMounts[i].type == "INTERNAL") {
+                return jelastic.env.file.RemoveMountPointById(config.envName, session, config.backupExecNode, "/opt/backup");
+                if (resp.result != 0) {
+                    return resp;
+                }
+            }
+        }
+        allMounts = jelastic.env.file.GetMountPoints(config.envName, session).array;
+        for (var i = 0, n = allMounts.length; i < n; i++) {
+            if (allMounts[i].path == "/opt/backup" && allMounts[i].type == "INTERNAL") {
                 return jelastic.env.file.RemoveMountPointByGroup(config.envName, session, config.nodeGroup, "/opt/backup");
+                if (resp.result != 0) {
+                    return resp;
+                }
             }
         }
         return {
