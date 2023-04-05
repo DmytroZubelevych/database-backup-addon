@@ -226,8 +226,8 @@ function BackupManager(config) {
     me.removeMounts = function removeMountForBackup() {
         var allMounts = jelastic.env.file.GetMountPoints(config.envName, session, config.backupExecNode).array;
         for (var i = 0, n = allMounts.length; i < n; i++) {
-            if (allMounts[i].sourcePath == "/data" && allMounts[i].path == "/opt/backup" && allMounts[i].name == "WPBackupRestore" && allMounts[i].type == "INTERNAL") {
-                var resp = jelastic.env.file.RemoveMountPointById(config.envName, session, config.backupExecNode, "/opt/backup");
+            if (allMounts[i].path == "/opt/backup" && allMounts[i].type == "INTERNAL") {
+                return jelastic.env.file.RemoveMountPointId(config.envName, session, config.backupExecNode, "/opt/backup");
                 if (resp.result != 0) {
                     return resp;
                 }
@@ -235,8 +235,8 @@ function BackupManager(config) {
         }
         allMounts = jelastic.env.file.GetMountPoints(config.envName, session).array;
         for (var i = 0, n = allMounts.length; i < n; i++) {
-            if (allMounts[i].sourcePath == "/data" && allMounts[i].path == "/opt/backup" && allMounts[i].name == "WPBackupRestore" && allMounts[i].type == "INTERNAL") {
-                resp = jelastic.env.file.RemoveMountPointByGroup(config.envName, session, "cp", "/opt/backup");
+            if (allMounts[i].path == "/opt/backup" && allMounts[i].type == "INTERNAL") {
+                return jelastic.env.file.RemoveMountPointByGroup(config.envName, session, config.nodeGroup, "/opt/backup");
                 if (resp.result != 0) {
                     return resp;
                 }
