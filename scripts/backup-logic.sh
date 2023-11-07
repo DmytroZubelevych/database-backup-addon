@@ -50,9 +50,9 @@ function create_snapshot(){
     DUMP_NAME=$(date "+%F_%H%M%S"-${BACKUP_TYPE}\($COMPUTE_TYPE-$COMPUTE_TYPE_FULL_VERSION$REDIS_TYPE\))
     if [ "$COMPUTE_TYPE" == "redis" ]; then
         RDB_TO_BACKUP=$(ls -d /tmp/* |grep redis-dump.*);
-        RESTIC_PASSWORD=${ENV_NAME} restic -q -r /opt/backup/${ENV_NAME}  backup --tag "${DUMP_NAME} ${BACKUP_ADDON_COMMIT_ID} ${BACKUP_TYPE}" ${RDB_TO_BACKUP} | tee -a ${BACKUP_LOG_FILE};
+        RESTIC_PASSWORD=${ENV_NAME} restic backup -q -r /opt/backup/${ENV_NAME} --tag "${DUMP_NAME} ${BACKUP_ADDON_COMMIT_ID} ${BACKUP_TYPE}" ${RDB_TO_BACKUP} | tee -a ${BACKUP_LOG_FILE};
     else
-        RESTIC_PASSWORD=${ENV_NAME} restic -q -r /opt/backup/${ENV_NAME}  backup --tag "${DUMP_NAME} ${BACKUP_ADDON_COMMIT_ID} ${BACKUP_TYPE}" ~/db_backup.sql | tee -a ${BACKUP_LOG_FILE}
+        RESTIC_PASSWORD=${ENV_NAME} restic backup -q -r /opt/backup/${ENV_NAME} --tag "${DUMP_NAME} ${BACKUP_ADDON_COMMIT_ID} ${BACKUP_TYPE}" ~/db_backup.sql | tee -a ${BACKUP_LOG_FILE}
     fi
 }
 
