@@ -287,21 +287,23 @@ function BackupManager(config) {
             scriptBody,
             resp;
 
+        var targetAppid = api.dev.apps.CreatePersistence ? config.envAppid : appid
+	    
         try {
             scriptBody = new Transport().get(url);
 
             scriptBody = me.replaceText(scriptBody, config);
 
             //delete the script if it already exists
-            jelastic.dev.scripting.DeleteScript(scriptName);
+            api.dev.scripting.DeleteScript(targetAppid, session, scriptName);
 
             //create a new script
-            resp = jelastic.dev.scripting.CreateScript(scriptName, "js", scriptBody);
+            resp = api.dev.scripting.CreateScript(targetAppid, session, scriptName, "js", scriptBody);
 
             java.lang.Thread.sleep(1000);
 
             //build script to avoid caching
-            jelastic.dev.scripting.Build(scriptName);
+            api.dev.scripting.Build(targetAppid, session, scriptName);
         } catch (ex) {
             resp = { result : Response.ERROR_UNKNOWN, error: toJSON(ex) };
         }
